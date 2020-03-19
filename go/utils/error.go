@@ -23,6 +23,19 @@ func NewError(code int, err error) Error {
 	return e
 }
 
+func DuplicateError(code int, err error) Error {
+	e := Error{}
+	e.Errors = make(map[string]interface{})
+	e.Errors["code"] = code
+	switch v := err.(type) {
+	case *echo.HTTPError:
+		e.Errors["body"] = v.Message
+	default:
+		e.Errors["body"] = v.Error()
+	}
+	return e
+}
+
 func NewValidatorError(vErrors []ValidationError) Error {
 	e := Error{}
 	e.Errors = make(map[string]interface{})
