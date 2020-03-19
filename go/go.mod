@@ -1,4 +1,4 @@
-module github.com/insipher/libraries/go
+module github.com/insipher/commons/go
 
 go 1.13
 
