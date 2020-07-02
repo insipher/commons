@@ -29,13 +29,16 @@ func RemoveIndex(arr []string, index int) []string {
 func IsEditor(userID string, editors json.RawMessage) (bool, error) {
 	hasAccess := false
 	var editorIDs []string
+	if editors == nil {
+		return false, nil
+	}
 	err := json.Unmarshal(editors, &editorIDs)
 	if err != nil {
 		return false, err
 	}
 
 	// check to see if user already is in favorties list, if so just return
-	if IndexOf(userID, editorIDs) > 0 {
+	if ArrayContains(editorIDs, userID) {
 		return true, nil
 	}
 	return hasAccess, nil
