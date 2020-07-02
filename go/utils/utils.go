@@ -10,3 +10,16 @@ func ArrayContains(arr []string, str string) bool {
 	}
 	return false
 }
+
+func IndexOf(element string, arr []string) int {
+	for k, v := range arr {
+		if element == v {
+			return k
+		}
+	}
+	return -1 //not found.
+}
+
+func RemoveIndex(arr []string, index int) []string {
+	return append(arr[:index], arr[index+1:]...)
+}
