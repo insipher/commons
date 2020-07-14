@@ -66,7 +66,6 @@ func Unauthorized() APIError {
 func ResourceNotFound() APIError {
 	e := APIError{}
 	e.Code = http.StatusNotFound
-	e.Model = "temp"
 	e.Message = "Resource not found."
 	return e
 }
