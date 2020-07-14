@@ -2,58 +2,77 @@ package utils
 
 import (
 	"net/http"
+	"reflect"
 
 	"github.com/labstack/echo/v4"
 )
 
-type Error struct {
-	Errors map[string]interface{} `json:"errors"`
+type APIError struct {
+	Model   string                   `json:"model"`
+	Code    int                      `json:"code"`
+	Message string                   `json:"message"`
+	Errors  []map[string]interface{} `json:"errors"`
 }
 
-func NewError(code int, err error) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["code"] = code
+func NewError(code int, err error) APIError {
+	e := APIError{}
+	e.Code = code
 	switch v := err.(type) {
 	case *echo.HTTPError:
-		e.Errors["body"] = v.Message
+		e.Message = v.Message.(string)
 	default:
-		e.Errors["body"] = v.Error()
+		e.Message = v.Error()
 	}
 	return e
 }
 
-func DBError(code int, model string, field string, err error, dberr error) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["code"] = code
-	e.Errors["body"] = err.Error()
-	e.Errors["model"] = model
-	e.Errors["field"] = field
-	e.Errors["details"] = dberr
+func DBError(model interface{}, fieldName string, err error, dberr error) APIError {
+	e := APIError{}
+
+	modelName := reflect.TypeOf(model).Elem().Name()
+	field, _ := reflect.ValueOf(model).Elem().Type().FieldByName(fieldName)
+	tag, _ := field.Tag.Lookup("json")
+
+	e.Code = http.StatusUnprocessableEntity
+	e.Model = modelName
+	e.Message = "Database error occurred."
+	dbe := make(map[string]interface{})
+	dbe["message"] = err.Error()
+	dbe["field"] = tag
+	dbe["details"] = dberr
+	e.Errors = append(e.Errors, dbe)
 	return e
 }
 
-func ValidatorError(vErrors []ValidationError) Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["code"] = http.StatusUnprocessableEntity
-	e.Errors["validationErrors"] = vErrors
+func ValidatorError(vErrors []ValidationError) APIError {
+	e := APIError{}
+	e.Code = http.StatusUnprocessableEntity
+	e.Model = "temp"
+	e.Message = "Validation error occurred."
+	for _, vErr := range vErrors {
+		ve := make(map[string]interface{})
+		ve["field"] = vErr.Field
+		ve["condition"] = vErr.Condition
+		ve["message"] = vErr.Message
+		ve["conditionParameters"] = vErr.ConditionParameters
+		ve["receivedValue"] = vErr.ReceivedValue
+		e.Errors = append(e.Errors, ve)
+	}
 	return e
 }
 
-func Unauthorized() Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["code"] = http.StatusUnauthorized
-	e.Errors["body"] = "Access forbidden."
+func Unauthorized() APIError {
+	e := APIError{}
+	e.Code = http.StatusUnauthorized
+	e.Model = "temp"
+	e.Message = "Access forbidden."
 	return e
 }
 
-func ResourceNotFound() Error {
-	e := Error{}
-	e.Errors = make(map[string]interface{})
-	e.Errors["code"] = http.StatusNotFound
-	e.Errors["body"] = "Resource not found."
+func ResourceNotFound() APIError {
+	e := APIError{}
+	e.Code = http.StatusNotFound
+	e.Model = "temp"
+	e.Message = "Resource not found."
 	return e
 }
