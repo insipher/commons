@@ -28,30 +28,25 @@ func NewError(code int, err error) APIError {
 
 func DBError(model interface{}, fieldName string, err error, dberr error) APIError {
 	e := APIError{}
-
-	modelName := reflect.TypeOf(model).Elem().Name()
-	field, _ := reflect.ValueOf(model).Elem().Type().FieldByName(fieldName)
-	tag, _ := field.Tag.Lookup("json")
-
 	e.Code = http.StatusUnprocessableEntity
-	e.Model = modelName
+	e.Model = getModelName(model)
 	e.Message = "Database error occurred."
 	dbe := make(map[string]interface{})
 	dbe["message"] = err.Error()
-	dbe["field"] = tag
+	dbe["field"] = getFieldTag(model, fieldName)
 	dbe["details"] = dberr
 	e.Errors = append(e.Errors, dbe)
 	return e
 }
 
-func ValidatorError(vErrors []ValidationError) APIError {
+func ValidatorError(model interface{}, vErrors []ValidationError) APIError {
 	e := APIError{}
 	e.Code = http.StatusUnprocessableEntity
-	e.Model = "temp"
+	e.Model = getModelName(model)
 	e.Message = "Validation error occurred."
 	for _, vErr := range vErrors {
 		ve := make(map[string]interface{})
-		ve["field"] = vErr.Field
+		ve["field"] = getFieldTag(model, vErr.Field)
 		ve["condition"] = vErr.Condition
 		ve["message"] = vErr.Message
 		ve["conditionParameters"] = vErr.ConditionParameters
@@ -64,7 +59,6 @@ func ValidatorError(vErrors []ValidationError) APIError {
 func Unauthorized() APIError {
 	e := APIError{}
 	e.Code = http.StatusUnauthorized
-	e.Model = "temp"
 	e.Message = "Access forbidden."
 	return e
 }
@@ -75,4 +69,14 @@ func ResourceNotFound() APIError {
 	e.Model = "temp"
 	e.Message = "Resource not found."
 	return e
+}
+
+func getModelName(model interface{}) string {
+	return reflect.TypeOf(model).Elem().Name()
+}
+
+func getFieldTag(model interface{}, fieldName string) string {
+	field, _ := reflect.ValueOf(model).Elem().Type().FieldByName(fieldName)
+	tag, _ := field.Tag.Lookup("json")
+	return tag
 }
