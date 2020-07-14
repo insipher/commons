@@ -8,10 +8,10 @@ import (
 )
 
 type APIError struct {
-	Model   string                   `json:"model"`
-	Code    int                      `json:"code"`
-	Message string                   `json:"message"`
-	Errors  []map[string]interface{} `json:"errors"`
+	Model   string        `json:"model"`
+	Code    int           `json:"code"`
+	Message string        `json:"message"`
+	Errors  []interface{} `json:"errors"`
 }
 
 func NewError(code int, err error) APIError {
@@ -23,6 +23,7 @@ func NewError(code int, err error) APIError {
 	default:
 		e.Message = v.Error()
 	}
+	e.Errors = append(e.Errors, err)
 	return e
 }
 
