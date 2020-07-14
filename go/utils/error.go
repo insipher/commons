@@ -23,11 +23,13 @@ func NewError(code int, err error) Error {
 	return e
 }
 
-func DBError(code int, err error, dberr error) Error {
+func DBError(code int, model string, field string, err error, dberr error) Error {
 	e := Error{}
 	e.Errors = make(map[string]interface{})
 	e.Errors["code"] = code
 	e.Errors["body"] = err.Error()
+	e.Errors["model"] = model
+	e.Errors["field"] = field
 	e.Errors["details"] = dberr
 	return e
 }
